@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hari's Aesthetic Gallery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Open+Sans:wght@400;600&family=Kalam:wght@400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif;
+            /* Keeping your aesthetic gradient background for the page itself */
+            background: linear-gradient(to right, #3B82F6, #06B6D4, #14B8A6); /* blue-500 via-cyan-500 to-teal-500 */
+            color: white; /* Default text color for page elements outside polaroids */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 2px;
+            text-align: center;
+            margin-bottom: 2.5rem; /* Increased margin */
+            font-size: 3.5rem;
+            line-height: 1;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Slightly wider items for polaroid */
+            gap: 2rem; /* More space between polaroids */
+            max-width: 1200px; /* Wider gallery */
+            width: 100%;
+            padding-bottom: 3rem;
+        }
+
+        .gallery-item {
+            background-color: #F8F8F8; /* **Off-white background for the Polaroid itself** */
+            border-radius: 4px; /* Slight rounding for the polaroid card */
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3); /* Stronger shadow for pop-out effect */
+            padding: 15px 15px 40px 15px; /* Padding to create the white border, extra at bottom for caption */
+            position: relative; /* For slight rotation */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            color: #333; /* Darker text for captions inside polaroid */
+            
+            /* Initial random rotation - applied by JavaScript */
+            transform: rotate(var(--random-rotate, 0deg));
+            will-change: transform; /* Hint for browser optimization */
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-8px) scale(1.03) rotate(var(--random-rotate-hover, 0deg)); /* Lift, slightly scale, and keep original rotation */
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 250px; /* Consistent height for images */
+            object-fit: cover; /* Covers the area, cropping if necessary */
+            display: block;
+            margin-bottom: 15px; /* Space between image and caption */
+            border: 1px solid #ddd; /* Very subtle border around image */
+        }
+
+        .gallery-item-caption {
+            font-family: 'Kalam', cursive; /* A more handwritten-style font for captions */
+            font-size: 1.1rem; /* Slightly larger caption font */
+            font-weight: 400;
+            line-height: 1.4;
+            max-width: calc(100% - 10px); /* Ensure caption doesn't overflow */
+            margin: 0 auto; /* Center caption */
+            position: absolute; /* Position relative to the polaroid */
+            bottom: 15px; /* Distance from the bottom of the polaroid */
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap; /* Keep caption on one line */
+            overflow: hidden; /* Hide overflow if too long */
+            text-overflow: ellipsis; /* Add ellipsis if hidden */
+        }
+
+        /* Back button styling (unchanged, just for context) */
+        .back-button {
+            background-color: #6366f1; /* Indigo 500 */
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 3rem; /* Space from the gallery grid */
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-button:hover {
+            background-color: #4f46e5;
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Basic responsiveness for smaller screens */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 3rem;
+            }
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Adjust for smaller screens */
+                gap: 1.5rem;
+            }
+            .gallery-item {
+                padding: 10px 10px 30px 10px;
+            }
+            .gallery-item img {
+                height: 180px;
+            }
+            .gallery-item-caption {
+                font-size: 1rem;
+                bottom: 10px;
+            }
+        }
+        @media (max-width: 480px) {
+             h1 {
+                font-size: 2.2rem;
+                margin-bottom: 1.5rem;
+            }
+            .gallery-grid {
+                grid-template-columns: 1fr; /* Single column on very small screens */
+                gap: 1.2rem;
+            }
+            .gallery-item img {
+                height: 220px; /* Keep a decent size on single column */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1 class="birthday-title">FAV PICS OF YOU!!</h1>
+
+    <div class="gallery-grid" id="galleryGrid">
+        </div>
+
+    <a href="index.html" class="back-button">
+        &larr; Back to Home Page
+    </a>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const galleryGrid = document.getElementById('galleryGrid');
+
+            // --- YOUR 18 PHOTOS GO HERE ---
+            // Replace 'path/to/...' with your actual image file paths
+            // And update the 'caption' with a short message and who it's from!
+            const photos = [
+                { src: 'C:\\Users\\Diya Moogi\\Documents\\birthday-website\\gallery_images\\alexa.jpg',caption: 'alexa in front of smoor' },
+                { src: 'C:\\Users\\Diya Moogi\\Documents\\birthday-website\\gallery_images\\vincent.jpg', caption: '11th grad!'  },
+                { src: 'C:\\Users\\Diya Moogi\\Documents\\birthday-website\\gallery_images\\baguette.jpg', caption: 'BAGUETTE COUNCIL' },
+                { src: 'C:\\Users\\Diya Moogi\\Documents\\birthday-website\\gallery_images\\bhati.jpg', caption: 'nunna' },
+                { src: 'C:\\Users\\Diya Moogi\\Documents\\birthday-website\\gallery_images\\hari.jpg', caption: 'kika bday!!'  },
+                { src: 'C:\\Users\\Diya Moogi\\Documents\\birthday-website\\gallery_images\\kamines.jpg', caption: '1'  },
+                { src: 'C:\\Users\\Diya Moogi\\Documents\\birthday-website\\gallery_images\\kamines2.jpg', caption: 'wayanad' },
+                { src: 'C:\\Users\\Diya Moogi\\Documents\\birthday-website\\gallery_images\\me1.jpg', caption: 'bhati\'s house'  },
+                { src: 'C:\\Users\\Diya Moogi\\Documents\\birthday-website\\gallery_images\\me2.jpg', caption: 'your bday!!'  },
+                { src: 'C:\\Users\\Diya Moogi\\Documents\\birthday-website\\gallery_images\\megrad.jpg', caption: 'grad!!'  },
+                { src: 'C:\\Users\\Diya Moogi\\Documents\\birthday-website\\gallery_images\\megrad2.jpg', caption: 'also grad!!'  },
+                { src: 'C:\\Users\\Diya Moogi\\Documents\\birthday-website\\gallery_images\\meme.jpg', caption: 'nande' },
+                { src: 'C:\\Users\\Diya Moogi\\Documents\\birthday-website\\gallery_images\\nunna.jpg', caption: '?'  },
+                { src: 'C:\\Users\\Diya Moogi\\Documents\\birthday-website\\gallery_images\\raghav.jpg', caption: 'raghav'  },
+                { src: 'C:\\Users\\Diya Moogi\\Documents\\birthday-website\\gallery_images\\sanjay.jpg', caption: 'sanjay' },
+                { src: 'C:\\Users\\Diya Moogi\\Documents\\birthday-website\\gallery_images\\vincent.jpg', caption: 'vincent'  },
+                { src: 'C:\\Users\\Diya Moogi\\Documents\\birthday-website\\gallery_images\\vincentwater.jpg', caption: 'Have you played rugby?'  },
+                { src: 'C:\\Users\\Diya Moogi\\Documents\\birthday-website\\gallery_images\\wayanad.jpg', caption: 'biseleri tiddies' }
+            ];
+
+            // Function to generate a random rotation between -3 and 3 degrees
+            function getRandomRotation() {
+                return (Math.random() * 6) - 3; // -3 to +3 degrees
+            }
+
+            photos.forEach(photo => {
+                const galleryItem = document.createElement('div');
+                galleryItem.classList.add('gallery-item');
+                
+                // Apply a random initial rotation via CSS custom property
+                galleryItem.style.setProperty('--random-rotate', `${getRandomRotation()}deg`);
+
+                // Create the HTML for each polaroid
+                galleryItem.innerHTML = `
+                    <img src="${photo.src}" alt="${photo.alt}">
+                    <p class="gallery-item-caption">${photo.caption}</p>
+                `;
+                galleryGrid.appendChild(galleryItem);
+            });
+        });
+    </script>
+</body>
+</html>

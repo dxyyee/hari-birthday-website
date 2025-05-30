@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strands Game!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* This is your grid container */
+        .strands-grid {
+            display: grid; /* THIS IS CRUCIAL FOR GRID LAYOUT */
+            grid-template-columns: repeat(6, 1fr); /* Creates 6 equal-width columns. Adjust '6' for your grid size (e.g., 8 for 6x8) */
+            width: min(100%, 400px); /* Take 100% width up to 400px, centering it */
+            margin: 0 auto; /* Center the grid horizontally */
+            gap: 2px; /* Small gap between cells, common in NYT Strands */
+            user-select: none;
+            touch-action: none;
+            border: 1px solid #cbd5e1; /* Optional: A border around the entire grid */
+            border-radius: 0.5rem; /* Optional: Rounded corners for the grid */
+            overflow: hidden; /* Ensures borders/shadows within cells don't bleed out */
+        }
+
+        /* This is for each individual letter cell */
+        .strands-cell {
+            aspect-ratio: 1 / 1; /* Keep cells square */
+            display: flex;
+            align-items: center; /* Center letter vertically */
+            justify-content: center; /* Center letter horizontally */
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 600; /* semibold */
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease;
+            background-color: #f8fafc; /* light gray for unselected cells */
+            color: #1f2937; /* Dark text */
+            /* Removed individual cell border here, as `gap` on the parent grid handles separation visually */
+        }
+
+        .strands-cell.selected {
+            background-color: #facc15; /* Tailwind yellow-400 */
+            color: #1f2937; /* Tailwind gray-800 */
+            transform: scale(0.95);
+            /* border-color: #facc15; (removed as individual cell border is removed) */
+        }
+        .strands-cell.found {
+            background-color: #4ade80; /* Tailwind green-400 */
+            color: #1f2937; /* Tailwind gray-800 */
+            /* border-color: #4ade80; (removed as individual cell border is removed) */
+        }
+        .strands-cell.spangram-found {
+            background-color: #60a5fa; /* Tailwind blue-400 */
+            color: #1f2937; /* Tailwind gray-800 */
+            /* border-color: #60a5fa; (removed as individual cell border is removed) */
+        }
+        .strands-cell.hint-reveal {
+            background-color: #fca5a5; /* Tailwind red-300 */
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Message Box Styling */
+        .message-box-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .message-box-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .message-box-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 90%;
+            width: 400px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-start min-h-screen p-4 md:p-8">
+
+    <div class="w-full max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-2xl">
+        <header class="text-center mb-6">
+            <h1 id="gameTitle" class="text-3xl md:text-4xl font-bold text-indigo-600">it s a custom strands game!!!!!</h1>
+            <p id="themeDisplay" class="text-lg text-gray-600 mt-1">Theme: <span class="font-semibold">???</span></p>
+        </header>
+
+        <div id="currentWordDisplay" class="text-center mb-4 h-8 text-2xl font-semibold text-purple-600 tracking-wider">
+            &nbsp; </div>
+
+        <div id="strandsGridContainer" class="mb-6 strands-grid">
+            </div>
+
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold mb-2 text-gray-700">Found Words:</h2>
+            <div id="foundWordsList" class="flex flex-wrap gap-2 text-sm">
+                </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 justify-center items-center mb-4">
+            <button id="submitWordBtn" class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
+                Submit Word
+            </button>
+            <button id="clearSelectionBtn" class="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition transform hover:scale-105">
+                Clear Selection
+            </button>
+            <button id="hintBtn" class="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition transform hover:scale-105">
+                Get Hint (<span id="hintsRemaining">3</span>)
+            </button>
+            <a href="stacking-tower.html" id="stackingGameButton" class="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition transform hover:scale-105 text-center no-underline flex items-center justify-center" style="display: none;">
+                Play Stacking Game
+            </a>
+            </div>
+        <p class="text-xs text-gray-500 text-center mt-4">Instructions: Click and drag to select letters. The Spangram touches opposite sides of the grid! Finish this game for the next one!!</p>
+    </div>
+
+    <a href="index.html" class="mt-8 text-indigo-600 hover:text-indigo-800 font-semibold">&larr; Back to Home Page</a>
+
+    <div id="messageBox" class="message-box-overlay">
+        <div class="message-box-content">
+            <h3 id="messageBoxTitle" class="text-xl font-bold mb-3">Message</h3>
+            <p id="messageBoxText" class="mb-4">Some text here.</p>
+            <button id="messageBoxClose" class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg">
+                OK
+            </button>
+        </div>
+    </div>
+
+    <script src="puzzles.js"></script> <script src="script.js"></script>
+</body>
+</html>

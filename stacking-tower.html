@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stacking Tower Game!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* CSS for Centering the Game */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%; /* Ensure html and body take full width */
+            height: 100%; /* Ensure html and body take full height */
+            overflow: hidden; /* Prevent unwanted scrollbars */
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Centers children horizontally in a column flex container */
+            justify-content: center; /* Centers children vertically in a column flex container */
+            min-height: 100vh; /* Ensures body takes full viewport height */
+            /* Removed padding from body to ensure perfect centering of the game-container */
+        }
+
+        .game-container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            padding: 30px; /* Internal padding for the game container itself */
+            text-align: center;
+            width: 100%;
+            max-width: 450px;
+            box-sizing: border-box; /* Ensures padding is included in the width */
+            margin: auto; /* Fallback for older browsers/consistency, but flexbox handles this */
+        }
+
+        /* Existing Styles (unchanged from previous version) */
+        h1 {
+            color: #334155; /* Slate 700 */
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        #score {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #10b981; /* Emerald 500 */
+            margin-bottom: 25px;
+        }
+
+        #gameCanvas {
+            background-color: #e2e8f0; /* Slate 200 */
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: block; /* Remove extra space below canvas */
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.1);
+        }
+
+        .game-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        button {
+            background-color: #6366f1; /* Indigo 500 */
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover {
+            background-color: #4f46e5; /* Indigo 600 */
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background-color: #94a3b8; /* Slate 400 */
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .message-box-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .message-box-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .message-box-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 90%;
+            width: 400px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>Stacking Baguette Game!</h1>
+        <p id="score">Score: 0</p>
+        <canvas id="gameCanvas" width="300" height="400"></canvas>
+        <div class="game-buttons">
+            <button id="startGameBtn">Start Game</button>
+            <button id="dropBlockBtn" disabled>Drop Block</button>
+        </div>
+        <a href="index.html" class="mt-8 text-indigo-600 hover:text-indigo-800 font-semibold inline-block">
+            &larr; Back to Birthday Message
+        </a>
+    </div>
+
+    <div id="messageBox" class="message-box-overlay">
+        <div class="message-box-content">
+            <h3 id="messageBoxTitle" class="text-xl font-bold mb-3">Game Over!</h3>
+            <p id="messageBoxText" class="mb-4">Your score was: 0</p>
+            <button id="messageBoxClose" class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg">
+                Play Again
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const startGameBtn = document.getElementById('startGameBtn');
+        const dropBlockBtn = document.getElementById('dropBlockBtn');
+        const messageBox = document.getElementById('messageBox');
+        const messageBoxTitle = document.getElementById('messageBoxTitle');
+        const messageBoxText = document.getElementById('messageBoxText');
+        const messageBoxClose = document.getElementById('messageBoxClose');
+
+        const BLOCK_HEIGHT = 30; // Still useful for stacking logic
+        const BLOCK_SPEED = 2;
+        const MAX_BLOCK_WIDTH = 100; // Max width for baguette images
+        const MIN_BLOCK_WIDTH = 30; // Min width for baguette images
+
+        let score = 0;
+        let blocks = []; // blocks stores { x, y, width, image } where 'y' is the BOTTOM of the block in WORLD coordinates.
+        let currentBlock = null;
+        let animationFrameId = null;
+        let gameOver = false;
+        let viewOffsetY = 0; // How much the "camera" has scrolled UP from world Y=0 (bottom)
+
+        const baguetteImages = []; // This will store the actual Image objects
+        const baguetteImagePaths = [
+            'baguette1.jpg'
+        ];
+        let imagesLoadedCount = 0;
+        let allImagesLoaded = false;
+
+        function loadImages(callback) {
+            if (baguetteImagePaths.length === 0) {
+                allImagesLoaded = true;
+                if (callback) callback();
+                return;
+            }
+
+            baguetteImagePaths.forEach((path, index) => {
+                const img = new Image();
+                img.src = path;
+                console.log('Attempting to load:', path);
+                img.onload = () => {
+                    baguetteImages.splice(index, 1, img);
+                    imagesLoadedCount++;
+                    console.log('Image loaded:', path, 'Count:', imagesLoadedCount);
+                    if (imagesLoadedCount === baguetteImagePaths.length) {
+                        allImagesLoaded = true;
+                        console.log('All images loaded:', allImagesLoaded);
+                        if (callback) callback();
+                    }
+                };
+                img.onerror = () => {
+                    console.error('Failed to load image:', path);
+                    imagesLoadedCount++;
+                    if (imagesLoadedCount === baguetteImagePaths.length) {
+                        allImagesLoaded = true;
+                        console.log('All images loaded (with errors):', allImagesLoaded);
+                        if (callback) callback();
+                    }
+                };
+            });
+        }
+
+        function createNewBlock() {
+            const initialWidth = Math.max(MIN_BLOCK_WIDTH, MAX_BLOCK_WIDTH - (score * 2));
+
+            let blockY; // This will be the BOTTOM of the new block in world coordinates
+            if (blocks.length === 0) {
+                blockY = 0; // First block sits at world Y = 0 (bottom of the logical world)
+            } else {
+                const lastBlock = blocks[blocks.length - 1];
+                blockY = lastBlock.y + BLOCK_HEIGHT; // New block sits on top of the last block in world coords
+            }
+
+            // Camera Scroll Logic: Adjust viewOffsetY
+            const SCROLL_THRESHOLD_FROM_CANVAS_BOTTOM = canvas.height * 0.25;
+
+            const currentVisualBlockBottomY = canvas.height - (blockY - viewOffsetY);
+
+            if (currentVisualBlockBottomY < SCROLL_THRESHOLD_FROM_CANVAS_BOTTOM) {
+                viewOffsetY = blockY - (canvas.height - SCROLL_THRESHOLD_FROM_CANVAS_BOTTOM);
+            }
+
+            if (viewOffsetY < 0) {
+                viewOffsetY = 0;
+            }
+
+            currentBlock = {
+                x: Math.random() * (canvas.width - initialWidth),
+                y: blockY, // Stored as its absolute world Y (bottom of block)
+                width: initialWidth,
+                direction: 1, // 1 for right, -1 for left
+                image: baguetteImages[0] // Only one image, so always use the first one
+            };
+            dropBlockBtn.disabled = false;
+        }
+
+        function drawBlock(block) {
+            // Convert block's world Y (bottom) to canvas Y (top-left corner for drawing rect)
+            const canvasY = canvas.height - (block.y + BLOCK_HEIGHT - viewOffsetY);
+            
+            if (block.image && block.image.complete) { // Ensure image is loaded before drawing
+                ctx.drawImage(block.image, block.x, canvasY, block.width, BLOCK_HEIGHT);
+            } else {
+                ctx.fillStyle = 'peru'; // A baguette-like brown for fallback
+                ctx.fillRect(block.x, canvasY, block.width, BLOCK_HEIGHT);
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            blocks.forEach(block => drawBlock(block));
+
+            if (currentBlock) {
+                drawBlock(currentBlock);
+            }
+        }
+
+        function update() {
+            if (gameOver) return;
+
+            if (currentBlock) {
+                currentBlock.x += BLOCK_SPEED * currentBlock.direction;
+
+                if (currentBlock.x + currentBlock.width > canvas.width) {
+                    currentBlock.x = canvas.width - currentBlock.width;
+                    currentBlock.direction = -1;
+                } else if (currentBlock.x < 0) {
+                    currentBlock.x = 0;
+                    currentBlock.direction = 1;
+                }
+            }
+
+            draw();
+            animationFrameId = requestAnimationFrame(update);
+        }
+
+        function dropBlock() {
+            if (!currentBlock || gameOver) return;
+
+            dropBlockBtn.disabled = true;
+
+            if (blocks.length === 0) { // First block
+                currentBlock.y = 0; // Ensure the first block's world Y is explicitly 0
+                currentBlock.x = Math.max(0, Math.min(canvas.width - currentBlock.width, currentBlock.x)); // Snap to valid x
+                blocks.push(currentBlock);
+                score++;
+            } else {
+                const lastBlock = blocks[blocks.length - 1];
+                const overlapStart = Math.max(currentBlock.x, lastBlock.x);
+                const overlapEnd = Math.min(currentBlock.x + currentBlock.width, lastBlock.x + lastBlock.width);
+                const overlap = overlapEnd - overlapStart;
+
+                if (overlap > 0) {
+                    currentBlock.width = overlap;
+                    currentBlock.x = overlapStart;
+                    score++;
+                    blocks.push(currentBlock);
+                } else {
+                    endGame("fail");
+                    return;
+                }
+            }
+
+            scoreDisplay.textContent = `Score: ${score}`;
+
+            if (!gameOver) {
+                createNewBlock();
+            }
+        }
+
+        function startGame() {
+            if (!allImagesLoaded) {
+                console.log("Images not loaded yet, waiting...");
+                return;
+            }
+
+            score = 0;
+            blocks = [];
+            gameOver = false;
+            viewOffsetY = 0; // Reset scroll position when starting a new game
+            scoreDisplay.textContent = `Score: ${score}`;
+            startGameBtn.disabled = true;
+            messageBox.classList.remove('visible'); // Hide game over message
+
+            createNewBlock(); // Create the very first block
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            update();
+        }
+
+        function endGame(status) {
+            gameOver = true;
+            cancelAnimationFrame(animationFrameId);
+            startGameBtn.disabled = false;
+            dropBlockBtn.disabled = true;
+
+            messageBoxTitle.textContent = "Game Over!";
+            messageBoxText.textContent = `Your tower collapsed! Your final score was: ${score}`;
+            messageBox.classList.add('visible');
+        }
+
+        function resetGame() {
+            messageBox.classList.remove('visible');
+            startGame();
+        }
+
+        // Event Listeners
+        startGameBtn.addEventListener('click', startGame);
+        dropBlockBtn.addEventListener('click', dropBlock);
+        messageBoxClose.addEventListener('click', resetGame);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !dropBlockBtn.disabled && currentBlock) {
+                e.preventDefault();
+                dropBlock();
+            }
+        });
+
+        startGameBtn.disabled = true;
+        loadImages(() => {
+            console.log("All baguette images loaded!");
+            startGameBtn.disabled = false;
+        });
+
+        draw();
+    </script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday, Hariguette!</title> <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css"> 
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif;
+            overflow: hidden; /* Prevents scrollbars if confetti goes off-screen */
+        }
+        .birthday-title {
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 2px;
+        }
+        /* Animation for the typed message */
+        .animated-text span {
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Styles for the confetti pieces (emojis and colored shapes) */
+        .confetti-piece { /* Renamed from confetti-emoji to be more general */
+            font-size: 24px; /* Adjust size of emojis */
+            line-height: 1; /* Prevent extra spacing for emojis */
+            display: inline-block; /* Allows transform for both emojis and shapes */
+            pointer-events: none; /* Allows clicks to pass through to elements beneath */
+            position: absolute;
+            opacity: 0; /* Will be animated */
+            transform: translateY(0px) rotate(0deg);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-r from-blue-500 via-cyan-500 to-teal-500 flex flex-col items-center justify-center min-h-screen text-white p-6">
+
+    <div class="text-center space-y-8">
+        <h1 id="birthdayMessage" class="birthday-title text-5xl md:text-7xl lg:text-8xl font-bold drop-shadow-lg">
+            </h1>
+        <p id="subMessage" class="animated-text text-xl md:text-2xl opacity-0" style="animation-delay: 1.5s;">
+            </p>
+
+        <div class="mt-12 flex justify-center space-x-4">
+            <a href="strands.html" id="gameButton" class="inline-block bg-blue-800 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg text-xl shadow-xl transition-transform transform hover:scale-105 opacity-0" style="animation-delay: 2.5s;">
+                CLICK HERE!!!(first)
+            </a>
+
+            <a href="gallery.html" id="galleryButton" class="inline-block bg-blue-800 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg text-xl shadow-xl transition-transform transform hover:scale-105 opacity-0" style="animation-delay: 2.5s;">
+                cam roll
+            </a>
+        </div>
+    </div>
+
+    <div id="confetti-container" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999;"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const birthdayMessageText = "HAPPY BDAY HARIGUETTE!!!";
+            const subMessageText = "happy 19!!! (uncle only)"; // Sub-message
+
+            const birthdayMessageElement = document.getElementById('birthdayMessage');
+            const subMessageElement = document.getElementById('subMessage');
+            const gameButton = document.getElementById('gameButton');
+            const galleryButton = document.getElementById('galleryButton'); // Get the new button
+            const confettiContainer = document.getElementById('confetti-container');
+
+            let i = 0;
+            // Function to simulate typing the main birthday message
+            function typeWriter() {
+                if (i < birthdayMessageText.length) {
+                    birthdayMessageElement.innerHTML += birthdayMessageText.charAt(i);
+                    i++;
+                    setTimeout(typeWriter, 70); // Typing speed
+                } else {
+                    // Once main message is typed, show sub-message and both buttons
+                    subMessageElement.textContent = subMessageText;
+                    subMessageElement.style.opacity = '1'; 
+                    gameButton.style.opacity = '1';
+                    galleryButton.style.opacity = '1'; // Show the new button
+                    startConfetti(); // Start the confetti animation
+                }
+            }
+
+            typeWriter(); // Initiate the typing effect
+
+            // --- Confetti Logic ---
+            // Baguette and Waffle emojis (replace with actual paths if not emojis)
+            const confettiEmojis = ['🥖', '🧇']; 
+
+            function createConfettiPiece() {
+                const piece = document.createElement('div');
+                piece.classList.add('confetti-piece'); // Use the general class
+
+                piece.style.left = Math.random() * 100 + 'vw';
+                piece.style.top = -50 + 'px'; // Start above the viewport
+
+                const type = Math.random(); // Determine type: 0-0.6 (regular), 0.6-1 (emoji)
+
+                if (type < 0.6) { // Regular confetti shape
+                    piece.style.width = Math.random() * 10 + 5 + 'px';
+                    piece.style.height = Math.random() * 10 + 5 + 'px';
+                    piece.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`;
+                    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                } else { // Baguette or Waffle emoji
+                    const emojiIndex = Math.floor(Math.random() * confettiEmojis.length);
+                    piece.textContent = confettiEmojis[emojiIndex];
+                    piece.style.fontSize = Math.random() * 20 + 24 + 'px'; // Vary emoji size
+                }
+
+                // Animate confetti falling
+                piece.animate([
+                    { transform: `translateY(0px) rotate(0deg)`, opacity: 0.8 },
+                    { transform: `translateY(${window.innerHeight + 100}px) rotate(${Math.random() * 720}deg)`, opacity: 0 }
+                ], {
+                    duration: Math.random() * 2000 + 2500, // 2.5 to 4.5 seconds fall duration
+                    easing: 'linear', 
+                    delay: Math.random() * 1000 // Up to 1 second stagger start
+                });
+
+                confettiContainer.appendChild(piece);
+
+                // Remove piece after animation completes to keep DOM clean
+                setTimeout(() => {
+                    piece.remove();
+                }, 4500); // Matches max duration
+            }
+
+            function startConfetti() {
+                // Initial burst
+                for (let i = 0; i < 300; i++) {
+                    setTimeout(createConfettiPiece, i * 10); 
+                }
+                // Continuous confetti
+                const intervalId = setInterval(() => {
+                    for (let i = 0; i < 15; i++) createConfettiPiece(); 
+                }, 300); 
+
+                // Stop confetti after a set time
+                setTimeout(() => clearInterval(intervalId), 25000); 
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+/* General body styling (can be expanded) */
+body {
+    margin: 0;
+    box-sizing: border-box; /* Better layout control */
+}
+
+/* You can add more custom styles here if needed */
+
+/* Example: Style for the found words list items if you want more control */
+.found-word-item {
+    padding: 0.25rem 0.75rem;
+    background-color: #e0e7ff; /* Tailwind indigo-100 */
+    color: #3730a3; /* Tailwind indigo-800 */
+    border-radius: 0.375rem; /* rounded-md */
+    font-weight: 500; /* medium */
+    border: 1px solid #c7d2fe; /* Tailwind indigo-200 */
+}
+
+.found-word-item.spangram {
+    background-color: #bfdbfe; /* Tailwind blue-200 */
+    color: #1e40af; /* Tailwind blue-800 */
+    border: 1px solid #93c5fd; /* Tailwind blue-300 */
+    font-weight: bold;
+}
+
+/* Add this CSS */
+.gallery-item {
+    /* These rules ensure the polaroid container is visible */
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.gallery-item img {
+    /* These rules ensure the image itself is visible */
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    /* Ensure it has dimensions, though your existing CSS should handle this */
+    width: 100% !important;
+    height: 250px !important;
+}
